@@ -162,7 +162,7 @@ EXEC dbo.delAcc @ID_USER = N'NV06' -- nchar(20)
 USE phongkham
 SELECT * FROM dbo.HOSOBENHNHAN
 
---NS1
+--NS1 Xem hồ sơ bệnh nhân
 
 DROP PROCEDURE dbo.xemHosoBenhNhan;  
 GO  
@@ -186,7 +186,7 @@ GO
 EXEC dbo.xemHosoBenhNhan @ID_HS = 'HS00316' -- nchar(20)
 
 
---NS2
+--NS2 Cập nhật thông tin sức khoẻ răng miệng
 
 DROP PROCEDURE dbo.updateToothHealth;  
 GO 
@@ -219,7 +219,104 @@ EXEC dbo.updateToothHealth @ID_HS = N'HS00022',             -- nchar(20)
                            @TinhTrangDiUng = N'không'     -- nchar(50)
 
 
---NS3
+--NS3 Quản lý kế hoạch điều trị
+--Xem--
+DROP PROCEDURE dbo.viewKeHoachDT;  
+GO  
+CREATE PROCEDURE viewKeHoachDT
+@ID_KH [nchar](20)
+AS
+BEGIN
+		BEGIN TRY
+			BEGIN TRAN
+			BEGIN
+				SELECT * FROM [dbo].[KEHOACHDIEUTRI] WHERE [dbo].[KEHOACHDIEUTRI].ID_KH = @ID_KH
+			END
+			COMMIT TRAN
+		END TRY
+		BEGIN CATCH
+			ROLLBACK TRAN
+		END CATCH
+END
+GO
+
+--EXEC dbo.viewKeHoachDT 'KH01944'
+
+--Cap nhat--
+DROP PROCEDURE dbo.updateKeHoachDT;  
+GO 
+CREATE PROCEDURE dbo.updateKeHoachDT
+@ID_KH [nchar](20),
+@MoTa [NCHAR](50),
+@TrangThaiDieuTri [NCHAR](50),
+@GhiChu [NCHAR](50),
+@PhiDieuTri [INT],
+@NgayDieuTri [DATE],
+@NhaSi [NCHAR](20),
+@TroKham [NCHAR](20)
+AS
+BEGIN
+		BEGIN TRY
+		BEGIN TRAN
+			IF EXISTS (SELECT A.ID_KH FROM [dbo].[KEHOACHDIEUTRI] A WHERE A.ID_KH = @ID_KH)
+			BEGIN
+				UPDATE [dbo].[KEHOACHDIEUTRI]
+				SET [MoTa] = @MoTa, [TrangThaiDieuTri] = @TrangThaiDieuTri, [GhiChu] = @GhiChu,
+					[PhiDieuTri] = @PhiDieuTri, [NgayDieuTri] = @NgayDieuTri, [NhaSi] = @NhaSi, [TroKham] = @TroKham
+				WHERE [dbo].[KEHOACHDIEUTRI].ID_KH = @ID_KH
+			END
+			COMMIT TRAN
+		END TRY
+		BEGIN CATCH
+			ROLLBACK TRAN
+		END CATCH
+END
+GO
+
+--Them--
+DROP PROCEDURE dbo.addKeHoachDT;  
+GO 
+CREATE PROCEDURE dbo.addKeHoachDT
+    @ID_KH [nchar](20),
+	@ID_HS [NCHAR](20),
+	@MoTa [NCHAR](50),
+	@TrangThaiDieuTri [NCHAR](50),
+	@GhiChu [NCHAR](50),
+	@PhiDieuTri [INT],
+	@NgayDieuTri [DATE],
+	@NhaSi [NCHAR](20),
+	@TroKham [NCHAR](20),
+	@ID_ThanhToan [NCHAR](20),
+	@ID_PhongKham [NCHAR](20)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRAN
+        IF NOT EXISTS (SELECT KH.ID_KH FROM [dbo].[KEHOACHDIEUTRI] KH WHERE ID_KH = @ID_KH)
+        BEGIN
+            -- If it doesn't exist, insert a new row
+            INSERT INTO [dbo].[KEHOACHDIEUTRI] (ID_KH, ID_HS, MoTa, TrangThaiDieuTri, GhiChu, 
+												PhiDieuTri, NgayDieuTri, NhaSi, TroKham, ID_ThanhToan, ID_PhongKham)
+            VALUES (@ID_KH, @ID_HS, @MoTa, @TrangThaiDieuTri, @GhiChu, @PhiDieuTri, 
+					@NgayDieuTri, @NhaSi, @TroKham, @ID_ThanhToan, @ID_PhongKham);
+
+            COMMIT TRAN
+            PRINT 'Thêm kế hoạch thành công';
+        END
+        ELSE
+        BEGIN
+            ROLLBACK TRAN
+            PRINT N'Lỗi: Kế hoạch đã tồn tại';
+        END
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRAN
+        PRINT N'Lỗi: ' + ERROR_MESSAGE();
+    END CATCH
+END;
+GO
+
+
 
 
 
